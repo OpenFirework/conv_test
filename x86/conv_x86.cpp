@@ -167,8 +167,8 @@ void conv3x3_x86_mat(const Mat& bottom_blob, Mat& top_blob, Mat &weight_data) {
     int kernel_h=3;
     int dilation_w=1;
     int dilation_h=1;
-    int stride_w;
-    int stride_h;
+    int stride_w=1;
+    int stride_h=1;
 
     int w = bottom_blob.w;
     int h = bottom_blob.h;
@@ -182,7 +182,7 @@ void conv3x3_x86_mat(const Mat& bottom_blob, Mat& top_blob, Mat &weight_data) {
     int outh = (h - kernel_extent_h) / stride_h + 1;
 
     const int maxk = kernel_w * kernel_h;      //3*3
-
+//    std::cout<<"length is "<<w<<","<<h<<"\n";
     std::vector<int> _space_ofs(maxk);
     int* space_ofs = &_space_ofs[0];
     {
@@ -205,7 +205,7 @@ void conv3x3_x86_mat(const Mat& bottom_blob, Mat& top_blob, Mat &weight_data) {
     top_blob.create(outw, outh, num_output, elemsize, 1);
     if (top_blob.empty())
         return;
-
+    int index = 0;
     for (int p = 0; p < num_output; p++)
     {
         float* outptr = top_blob.channel(p);
@@ -228,16 +228,17 @@ void conv3x3_x86_mat(const Mat& bottom_blob, Mat& top_blob, Mat &weight_data) {
                     {
                         float val = sptr[space_ofs[k]]; // 20.72
                         float wt = kptr[k];
-                        sum += val * wt; // 41.45
+                        sum += val * wt; // 41.45  
+                        
                     }
                     kptr += maxk;
                 }
-
                 outptr[j] = sum;
             }
 
             outptr += outw;
         }
     }
+   // std::cout<<"total len is "<<index<<"\n";
 
 }

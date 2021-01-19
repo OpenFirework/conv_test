@@ -13,6 +13,7 @@ int32_t NowMicros() {
 
 void conv3x3_x86_origin(float *inputdata, int inshape[4], int outc, float *weights,  float *outdata);
 void conv3x3_x86_img2col(float *inputdata, int inshape[4], int outc, float *weights,  float *outdata);
+void conv3x3_x86_mat(const Mat& bottom_blob, Mat& top_blob, Mat &weight_data);
 
 int main() {
     float *input = new float[3*224*224];
@@ -50,6 +51,26 @@ int main() {
     end = NowMicros();
     std::cout<<(end-start)/1000.0<<"ms\n";
 
+   
+   
+    Mat bottom(224,224,3,(void*)input, (size_t)(sizeof(float)), 1);
+    Mat weightm(32*3*3*3,(void*)weights, (size_t)(sizeof(float)), 1);
+    Mat top;
+
+    start = NowMicros();
+    conv3x3_x86_mat(bottom,top, weightm);
+     end = NowMicros();
+    std::cout<<(end-start)/1000.0<<"ms\n";
+    // for(int q=0;q<1;q++) {
+    //     float *ptr = top.channel(q);
+    //     for(int i=0;i<222*222;i++) {
+    //         std::cout<<ptr[i]<<"\n";
+    //     }
+    // }
+
+
+    
+  /* 
     Mat mat(2,3,4,(size_t)(sizeof(float)),1);
     int value=0;
     for(int c=0;c<4;c++) {
@@ -80,7 +101,7 @@ int main() {
     Mat dst;
     convert_packing(mat,dst,2);
     
-    /* 
+  
     float *p = (float*)dst.data;
     for(int i=0;i<24;i++) {
         std::cout<<p[i]<<",";
