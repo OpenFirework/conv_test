@@ -1,6 +1,8 @@
 #include <iostream>
 #include <fstream> 
 #include <sys/time.h> 
+#include "mat.h"
+#include<bitset>
 using namespace std;
 
 int32_t NowMicros() {
@@ -48,24 +50,57 @@ int main() {
     end = NowMicros();
     std::cout<<(end-start)/1000.0<<"ms\n";
 
-    // start = NowMicros();
-    // conv3x3_x86(input, inshape, outc, weights, outdata);
-    // end = NowMicros();
-    // std::cout<<(end-start)/1000.0<<"ms\n";
-    //  for(int i=0;i<outh;i++) {
-    //       for(int j=0;j<outw;j++)
-    //         std::cout<<i<<","<<j<<",:\t"<<outdata[i*outw+j]<<"\n";
-    //  }
-           
-    // for(int c=0;c<outc;c++) {
-    //     int index = c*outw*outh;
-    //     std::cout<<outdata[index]<<",";
-    //     if(c==30) {
-    //         for(int i=0;i<outw*outh;i++) {
-    //             std::cout<<i<<","<<outdata[index+i]<<"\n";
-    //         }
-    //     }
-    // }
+    Mat mat(2,3,4,(size_t)(sizeof(float)),1);
+    int value=0;
+    for(int c=0;c<4;c++) {
+        float *ptr = mat.channel(c);
+        int index=0;
+        for(int h=0;h<3;h++) {
+            for(int w=0;w<2;w++) {
+                ptr[index]=value;
+                index++;
+                value++;
+            }
+        }
+    }
 
+    for(int c=0;c<4;c++) {
+        float *ptr = mat.channel(c);
+        int index=0;
+        for(int h=0;h<3;h++) {
+            for(int w=0;w<2;w++) {
+                std::cout<<ptr[index]<<",";
+                index++;
+            }
+            std::cout<<"\n";
+        }
+        std::cout<<"\n\n";
+    }
+
+    Mat dst;
+    convert_packing(mat,dst,2);
+    
+    /* 
+    float *p = (float*)dst.data;
+    for(int i=0;i<24;i++) {
+        std::cout<<p[i]<<",";
+    }
+
+    std::cout<<"\n";
+    p = (float*)mat.data;
+    for(int i=0;i<24;i++) {
+        std::cout<<p[i]<<",";
+    }
+   
+    std::cout<<"\n";
+    int a=123;
+    bitset<32> bs(a);
+    cout<<bs<<endl;
+    bitset<32> b1(a+15);
+    cout<<b1<<endl;
+    a=-16;
+    bitset<32> b2(a);
+    cout<<b2<<endl;
+    cout<<(b1&b2)<<endl;*/
     return 0;
 }
