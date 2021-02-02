@@ -15,6 +15,11 @@ void conv3x3_x86_origin(float *inputdata, int inshape[4], int outc, float *weigh
 void conv3x3_x86_img2col(float *inputdata, int inshape[4], int outc, float *weights,  float *outdata);
 void conv3x3_x86_mat(const Mat& bottom_blob, Mat& top_blob, Mat &weight_data);
 
+
+void conv3x3s1_winograd23_transform_kernel_sse(const Mat& kernel, Mat& kernel_tm, int inch, int outch);
+void conv3x3s1_winograd23_sse(const Mat& bottom_blob, Mat& top_blob, const Mat& kernel_tm);
+void conv3x3s1_winograd23_sse_omp(const Mat& bottom_blob, Mat& top_blob, const Mat& kernel_tm);
+
 int main() {
     float *input = new float[3*224*224];
     //假设input是h,w,c的排列方式，首先还是需要将通道分离出来，变成C，H，W的方式比较方便并行计算
@@ -26,7 +31,8 @@ int main() {
     for(int i=0;i<32*3*3*3;i++) {
         weights[i] = 1.0;
     }
-    std::cout<<input[3*224*224-1]<<"\n";
+    std::cout<<"Convolution test one case:\n";
+    std::cout<<"input (224,224,3), output channels 32; kernel:3*3, no pad\n";
     // ofstream file("weights.bin",ios::out|ios::binary);
     // file.write((char*)weights,32*3*3*3*sizeof(float));
     // file.close();
@@ -37,39 +43,85 @@ int main() {
     int outh = inshape[1]-2;
     int outdatalen = outc*outw*outh;
     outdata = new float[outdatalen];
+    conv3x3_x86_origin(input, inshape, outc, weights, outdata);
+
     int start = NowMicros();
     conv3x3_x86_origin(input, inshape, outc, weights, outdata);
     int end = NowMicros();
-    std::cout<<(end-start)/1000.0<<"ms\n";
+    std::cout<<"origin Convolution spend -----"<<(end-start)/1000.0<<"ms\n";
 
+    conv3x3_x86_img2col(input, inshape, outc, weights, outdata);  
 
-    start = NowMicros();
-    //while(1)
-    {
-        conv3x3_x86_img2col(input, inshape, outc, weights, outdata);
-    }
+    start = NowMicros();   
+    conv3x3_x86_img2col(input, inshape, outc, weights, outdata);  
     end = NowMicros();
-    std::cout<<(end-start)/1000.0<<"ms\n";
+    std::cout<<"img2col Convolution spend -----"<<(end-start)/1000.0<<"ms\n";
 
-   
-   
-    Mat bottom(224,224,3,(void*)input, (size_t)(sizeof(float)), 1);
-    Mat weightm(32*3*3*3,(void*)weights, (size_t)(sizeof(float)), 1);
+
+    Mat bottom(224,224,3, (size_t)(sizeof(float)), 1);
+    int index=0;
+    for(int c=0;c<3;c++) {
+        float *ptr = bottom.channel(c);
+        for(int i=0;i<224*224;i++) {
+             ptr[i] = index%10;
+             index++;
+        }
+       
+    }
+    Mat weightm(32*3*3*3, (size_t)(sizeof(float)), 1);
+    for(int i=0;i<32*3*3*3;i++){
+        weightm[i] = 1.0;
+    }
     Mat top;
+
+    conv3x3_x86_mat(bottom,top, weightm);
+
 
     start = NowMicros();
     conv3x3_x86_mat(bottom,top, weightm);
      end = NowMicros();
-    std::cout<<(end-start)/1000.0<<"ms\n";
-    // for(int q=0;q<1;q++) {
-    //     float *ptr = top.channel(q);
-    //     for(int i=0;i<222*222;i++) {
-    //         std::cout<<ptr[i]<<"\n";
-    //     }
-    // }
+    std::cout<<"origin Convolution(use Mat)-----"<<(end-start)/1000.0<<"ms\n";
 
 
-    
+    Mat weightwino;
+    conv3x3s1_winograd23_transform_kernel_sse(weightm, weightwino, 3, 32);
+
+    conv3x3s1_winograd23_sse(bottom, top, weightwino);
+    start = NowMicros();
+    conv3x3s1_winograd23_sse(bottom, top, weightwino);
+    end = NowMicros();
+    std::cout<<"winograd Convolution(use Mat):-----"<<(end-start)/1000.0<<"ms\n";
+
+    conv3x3s1_winograd23_sse_omp(bottom, top, weightwino);
+
+    start = NowMicros();
+    conv3x3s1_winograd23_sse_omp(bottom, top, weightwino);
+    end = NowMicros();
+    std::cout<<"winograd Convolution(use OpenMP 2 threads):-----"<<(end-start)/1000.0<<"ms\n";
+
+    std::cout<<"Convolution test one case:\n";
+    std::cout<<"input (112,112,3), output channels 3; kernel:3*3, no pad\n";
+
+    int inshape1[4] = {1,224,224,3};
+    int outc1 = 3;
+    start = NowMicros();   
+    conv3x3_x86_img2col(input, inshape, outc, weights, outdata);  
+    end = NowMicros();
+    std::cout<<"img2col Convolution spend -----"<<(end-start)/1000.0<<"ms\n";
+
+    Mat bottom2(112,112,3, (size_t)(sizeof(float)), 1);
+    Mat weightm2(3*3*3*3, (size_t)(sizeof(float)), 1);
+    for(int i=0;i<3*3*3*3;i++){
+        weightm2[i] = 1.0;
+    }
+    Mat weightwino2;
+    conv3x3s1_winograd23_transform_kernel_sse(weightm2, weightwino, 3, 3);
+
+    start = NowMicros();
+    conv3x3s1_winograd23_sse(bottom, top, weightwino);
+    end = NowMicros();
+    std::cout<<"winograd Convolution(use Mat):-----"<<(end-start)/1000.0<<"ms\n";
+
   /* 
     Mat mat(2,3,4,(size_t)(sizeof(float)),1);
     int value=0;
