@@ -537,7 +537,7 @@ void conv3x3s1_winograd23_sse_omp(const Mat& bottom_blob, Mat& top_blob, const M
                 }
             }
         }
-        
+
         #pragma omp parallel for num_threads(2)
         for (int p = remain_outch_start; p < outch; p++)
         {
