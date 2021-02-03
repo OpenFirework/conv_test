@@ -3,15 +3,67 @@
 ```
 Convolution test one case:
 input (224,224,3), output channels 32; kernel:3*3, no pad
-origin Convolution spend -----214.942ms
-img2col Convolution spend -----66.136ms
-origin Convolution(use Mat)-----202.171ms
-winograd Convolution(use Mat):-----75.512ms
-winograd Convolution(use OpenMP 2 threads):-----41.253ms
+origin Convolution spend -----185.894ms
+img2col Convolution spend -----115.071ms
+origin Convolution(use Mat)-----208.848ms
+winograd Convolution(use Mat):-----77.249ms
+winograd Convolution(use omp 2 threads):-----44.353ms
+
+Convolution test two case:
+input (32,32,16), output channels 16; kernel:3*3, no pad
+img2col Convolution spend -----1.917ms
+winograd Convolution(use Mat):-----3.335ms
 
 
-Convolution test one case:
-input (112,112,3), output channels 3; kernel:3*3, no pad
-img2col Convolution spend -----6.798ms
-winograd Convolution(use Mat):-----3.727ms
+compare result convolution， make sure results are same!
+first channel result:
+105,105,105
+102,102,102
+99,99,99
+126,126,126
+123,123,123
+120,120,120
+117,117,117
+144,144,144
+141,141,141
+138,138,138
+105,105,105
+102,102,102
+99,99,99
+126,126,126
+123,123,123
+120,120,120
+117,117,117
+144,144,144
+141,141,141
+138,138,138
+105,105,105
+102,102,102
+99,99,99
+126,126,126
+last channel result:
+120,120,120
+123,123,123
+126,126,126
+99,99,99
+102,102,102
+105,105,105
+138,138,138
+141,141,141
+144,144,144
+117,117,117
+120,120,120
+123,123,123
+126,126,126
+99,99,99
+102,102,102
+105,105,105
+138,138,138
+141,141,141
+144,144,144
+117,117,117
+120,120,120
+123,123,123
+126,126,126
+99,99,99
 ```
